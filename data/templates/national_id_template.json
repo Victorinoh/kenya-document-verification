@@ -1,0 +1,96 @@
+{
+  "document_type": "kenyan_national_id",
+  "version": "3rd_generation",
+  "dimensions": {
+    "width_mm": 85.6,
+    "height_mm": 53.98,
+    "aspect_ratio": 1.586
+  },
+  "security_features": {
+    "hologram": {
+      "location": "top_right",
+      "color_shift": true,
+      "contains_microtext": true,
+      "priority": "high",
+      "detection_method": "color_shift_analysis"
+    },
+    "ghost_image": {
+      "location": "center_right",
+      "type": "grayscale_laser",
+      "priority": "high",
+      "detection_method": "grayscale_comparison"
+    },
+    "microprinting": {
+      "locations": ["border", "background"],
+      "text": "REPUBLIC OF KENYA",
+      "min_resolution_dpi": 600,
+      "priority": "medium",
+      "detection_method": "edge_detection"
+    },
+    "guilloche_pattern": {
+      "location": "background",
+      "priority": "medium",
+      "detection_method": "pattern_matching"
+    },
+    "laser_engraving": {
+      "applies_to": ["personal_data", "photo"],
+      "priority": "high",
+      "detection_method": "texture_analysis"
+    }
+  },
+  "data_fields": {
+    "id_number": {
+      "label": "ID Number",
+      "format_regex": "^\\d{8}$",
+      "ocr_priority": "high",
+      "validation": "format_and_checksum"
+    },
+    "full_name": {
+      "label": "Full Name",
+      "format_regex": "^[A-Z\\s]+$",
+      "ocr_priority": "high",
+      "validation": "non_empty"
+    },
+    "date_of_birth": {
+      "label": "Date of Birth",
+      "format_regex": "^\\d{2}/\\d{2}/\\d{4}$",
+      "ocr_priority": "high",
+      "validation": "valid_date_age_18_plus"
+    },
+    "sex": {
+      "label": "Sex",
+      "format_regex": "^[MF]$",
+      "ocr_priority": "high",
+      "validation": "enum_MF"
+    },
+    "place_of_birth": {
+      "label": "Place of Birth",
+      "format_regex": "^[A-Z\\s]+$",
+      "ocr_priority": "medium",
+      "validation": "non_empty"
+    },
+    "date_of_issue": {
+      "label": "Date of Issue",
+      "format_regex": "^\\d{2}/\\d{2}/\\d{4}$",
+      "ocr_priority": "medium",
+      "validation": "after_dob_not_future"
+    }
+  },
+  "forgery_indicators": [
+    "missing_hologram",
+    "flat_hologram_no_color_shift",
+    "missing_ghost_image",
+    "inconsistent_font",
+    "wrong_dimensions",
+    "low_quality_print",
+    "altered_photo",
+    "mismatched_id_number_format"
+  ],
+  "validation_rules": {
+    "age_minimum": 18,
+    "id_number_digits": 8,
+    "date_format": "DD/MM/YYYY",
+    "issue_date_cannot_be_future": true,
+    "dob_must_be_before_issue": true
+  }
+}

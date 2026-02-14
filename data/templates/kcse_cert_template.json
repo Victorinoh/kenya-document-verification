@@ -1,0 +1,100 @@
+{
+  "document_type": "kcse_certificate",
+  "issuing_body": "KNEC",
+  "dimensions": {
+    "width_mm": 210,
+    "height_mm": 297,
+    "size": "A4"
+  },
+  "security_features": {
+    "watermark": {
+      "description": "KNEC lion watermark",
+      "visible_under": "backlight",
+      "priority": "high",
+      "detection_method": "grayscale_backlight_analysis"
+    },
+    "security_thread": {
+      "direction": "vertical",
+      "contains_microtext": "KNEC",
+      "priority": "high",
+      "detection_method": "thread_continuity_detection"
+    },
+    "embossed_seal": {
+      "location": "bottom_left",
+      "type": "physical_impression",
+      "priority": "medium",
+      "detection_method": "shadow_depth_analysis"
+    },
+    "serial_number": {
+      "format": "YYYY/XXXXXX",
+      "format_regex": "^\\d{4}/\\d{6}$",
+      "priority": "high",
+      "detection_method": "ocr_format_validation"
+    },
+    "qr_code": {
+      "present_from_year": 2020,
+      "links_to": "KNEC verification portal",
+      "priority": "high",
+      "detection_method": "qr_decode_validate"
+    }
+  },
+  "data_fields": {
+    "candidate_name": {
+      "label": "Candidate Name",
+      "format_regex": "^[A-Z\\s]+$",
+      "ocr_priority": "high",
+      "validation": "non_empty_uppercase"
+    },
+    "index_number": {
+      "label": "Index Number",
+      "format_regex": "^\\d{2}-\\d{5}-\\d{3}$",
+      "ocr_priority": "high",
+      "validation": "format_check"
+    },
+    "school_name": {
+      "label": "School Name",
+      "ocr_priority": "medium",
+      "validation": "non_empty"
+    },
+    "year": {
+      "label": "Examination Year",
+      "format_regex": "^\\d{4}$",
+      "ocr_priority": "high",
+      "validation": "year_1990_to_present"
+    },
+    "mean_grade": {
+      "label": "Mean Grade",
+      "format_regex": "^[A-E][+-]?$",
+      "ocr_priority": "high",
+      "validation": "valid_grade_enum"
+    },
+    "subjects": {
+      "label": "Subjects and Grades",
+      "minimum_count": 7,
+      "ocr_priority": "high",
+      "validation": "min_7_mandatory_subjects_present"
+    }
+  },
+  "mandatory_subjects": [
+    "ENGLISH",
+    "KISWAHILI",
+    "MATHEMATICS"
+  ],
+  "valid_grades": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E"],
+  "forgery_indicators": [
+    "missing_watermark",
+    "no_embossed_seal",
+    "wrong_font",
+    "invalid_grade_format",
+    "missing_mandatory_subjects",
+    "mean_grade_inconsistent_with_subjects",
+    "invalid_index_number_format",
+    "qr_code_not_linking_to_knec"
+  ],
+  "validation_rules": {
+    "min_subjects": 7,
+    "year_minimum": 1990,
+    "issue_date_after_exam_year": true,
+    "mean_grade_must_match_subjects": true
+  }
+}

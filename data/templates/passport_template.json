@@ -1,0 +1,79 @@
+{
+  "document_type": "kenyan_passport",
+  "issuing_body": "Department of Immigration",
+  "dimensions": {
+    "width_mm": 125,
+    "height_mm": 88
+  },
+  "security_features": {
+    "mrz": {
+      "lines": 2,
+      "standard": "ICAO_9303",
+      "location": "bottom_data_page",
+      "priority": "high",
+      "detection_method": "mrz_parsing_checksum"
+    },
+    "holographic_laminate": {
+      "location": "data_page_overlay",
+      "priority": "high",
+      "detection_method": "light_reflection_analysis"
+    },
+    "laser_perforations": {
+      "content": "passport_number",
+      "visible_under": "backlight",
+      "priority": "medium",
+      "detection_method": "backlight_perforation_detection"
+    },
+    "color_shifting_ink": {
+      "applies_to": "passport_number",
+      "colors": ["gold", "green"],
+      "priority": "medium",
+      "detection_method": "multi_angle_color_analysis"
+    }
+  },
+  "data_fields": {
+    "passport_number": {
+      "label": "Passport Number",
+      "format_regex": "^[A-Z]{2}\\d{6}$",
+      "ocr_priority": "high",
+      "validation": "format_check"
+    },
+    "surname": {
+      "label": "Surname",
+      "format_regex": "^[A-Z\\s]+$",
+      "ocr_priority": "high",
+      "validation": "non_empty"
+    },
+    "given_names": {
+      "label": "Given Names",
+      "format_regex": "^[A-Z\\s]+$",
+      "ocr_priority": "high",
+      "validation": "non_empty"
+    },
+    "date_of_birth": {
+      "label": "Date of Birth",
+      "format": "DD MMM YYYY",
+      "ocr_priority": "high",
+      "validation": "valid_date"
+    },
+    "sex": {
+      "label": "Sex",
+      "format_regex": "^[MF]$",
+      "ocr_priority": "high",
+      "validation": "enum_MF"
+    },
+    "date_of_expiry": {
+      "label": "Date of Expiry",
+      "ocr_priority": "high",
+      "validation": "after_issue_date"
+    }
+  },
+  "forgery_indicators": [
+    "mrz_mismatch_with_printed_data",
+    "invalid_mrz_checksum",
+    "missing_holographic_laminate",
+    "passport_number_wrong_format",
+    "expiry_before_issue_date",
+    "photo_manipulation_detected"
+  ]
+}
