@@ -1,0 +1,5 @@
+filename,original_name,document_type,collection_date,source,quality,anonymized,notes
+filename,original_name,document_type,collection_date,source,quality,anonymized,notes
+anon_national_id_001.jpg,national_id_original_001.jpg,national_id,2026-02-12,personal,high,yes,Front side clear
+anon_national_id_002.jpg,national_id_original_002.jpg,national_id,2026-02-12,personal,high,yes,Back side
+anon_kcse_001.jpg,kcse_original_001.jpg,kcse_certificate,2026-02-12,personal,medium,yes,2020 cert
