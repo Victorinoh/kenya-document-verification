@@ -2,8 +2,6 @@
 Calculate and display dataset statistics
 """
 from pathlib import Path
-import cv2
-import numpy as np
 
 
 def count_images(folder):
@@ -13,29 +11,8 @@ def count_images(folder):
         return 0
     jpg_count = len(list(path.glob("*.jpg")))
     png_count = len(list(path.glob("*.png")))
-    return jpg_count + png_count
-
-
-def get_image_stats(folder):
-    """Get statistics about images in folder"""
-    path = Path(folder)
-    if not path.exists():
-        return None
-    
-    images = list(path.glob("*.jpg")) + list(path.glob("*.png"))
-    if not images:
-        return None
-    
-    sizes = []
-    for img_path in images[:10]:  # Sample first 10
-        img = cv2.imread(str(img_path))
-        if img is not None:
-            sizes.append(img.shape)
-    
-    return {
-        'count': len(images),
-        'sample_size': sizes[0] if sizes else None
-    }
+    JPG_count = len(list(path.glob("*.JPG")))
+    return jpg_count + png_count + JPG_count
 
 
 print("=" * 70)
@@ -57,8 +34,8 @@ print(f"KCSE Certificates:   Genuine: {kcse_genuine:3d}  |  Fake: {kcse_fake:3d}
 print(f"Passports:           Genuine: {passport_genuine:3d}  |  Fake: {passport_fake:3d}")
 print(f"{'':20} Total: {nat_id_genuine + kcse_genuine + passport_genuine:3d}  |  Total: {nat_id_fake + kcse_fake + passport_fake:3d}")
 
-# Augmented training data
-print("\n📁 TRAINING SET (data/augmented/train/)")
+# Training genuine data
+print("\n📁 TRAINING SET - GENUINE (data/augmented/train/)")
 print("-" * 70)
 train_nat_id = count_images("data/augmented/train/national_ids")
 train_kcse = count_images("data/augmented/train/kcse_certificates")
@@ -69,8 +46,20 @@ print(f"KCSE Certificates:   {train_kcse:4d} images")
 print(f"Passports:           {train_passport:4d} images")
 print(f"{'':20} Total: {train_nat_id + train_kcse + train_passport:4d} images")
 
-# Validation data
-print("\n📁 VALIDATION SET (data/augmented/validation/)")
+# Training fake data
+print("\n📁 TRAINING SET - FAKE (data/augmented/train/fake/)")
+print("-" * 70)
+train_fake_nat_id = count_images("data/augmented/train/fake/national_ids")
+train_fake_kcse = count_images("data/augmented/train/fake/kcse_certificates")
+train_fake_passport = count_images("data/augmented/train/fake/passports")
+
+print(f"National IDs:        {train_fake_nat_id:4d} images")
+print(f"KCSE Certificates:   {train_fake_kcse:4d} images")
+print(f"Passports:           {train_fake_passport:4d} images")
+print(f"{'':20} Total: {train_fake_nat_id + train_fake_kcse + train_fake_passport:4d} images")
+
+# Validation genuine data
+print("\n📁 VALIDATION SET - GENUINE (data/augmented/validation/)")
 print("-" * 70)
 val_nat_id = count_images("data/augmented/validation/national_ids")
 val_kcse = count_images("data/augmented/validation/kcse_certificates")
@@ -81,45 +70,42 @@ print(f"KCSE Certificates:   {val_kcse:4d} images")
 print(f"Passports:           {val_passport:4d} images")
 print(f"{'':20} Total: {val_nat_id + val_kcse + val_passport:4d} images")
 
-# Grand total
-print("\n" + "=" * 70)
-grand_total = (train_nat_id + train_kcse + train_passport + 
-               val_nat_id + val_kcse + val_passport)
-print(f"GRAND TOTAL: {grand_total} images ready for model training")
-print("=" * 70)
-
-# Dataset split percentages
-train_pct = ((train_nat_id + train_kcse + train_passport) / grand_total * 100)
-val_pct = ((val_nat_id + val_kcse + val_passport) / grand_total * 100)
-
-print(f"\nDataset Split:")
-print(f"  Training:   {train_pct:.1f}%")
-print(f"  Validation: {val_pct:.1f}%")
-
-print("\n✅ Dataset ready for Week 3 model training!\n")
-
-# Add counting for fake images
-print("\n📁 TRAINING SET - FAKE DOCUMENTS")
-print("-" * 70)
-train_fake_nat_id = count_images("data/augmented/train/fake/national_ids")
-train_fake_kcse = count_images("data/augmented/train/fake/kcse_certificates")
-train_fake_passport = count_images("data/augmented/train/fake/passports")
-
-print(f"National IDs - Fake:     {train_fake_nat_id:4d} images")
-print(f"KCSE Certificates - Fake: {train_fake_kcse:4d} images")
-print(f"Passports - Fake:        {train_fake_passport:4d} images")
-
-print("\n📁 VALIDATION SET - FAKE DOCUMENTS")
+# Validation fake data
+print("\n📁 VALIDATION SET - FAKE (data/augmented/validation/fake/)")
 print("-" * 70)
 val_fake_nat_id = count_images("data/augmented/validation/fake/national_ids")
 val_fake_kcse = count_images("data/augmented/validation/fake/kcse_certificates")
 val_fake_passport = count_images("data/augmented/validation/fake/passports")
 
-print(f"National IDs - Fake:     {val_fake_nat_id:4d} images")
-print(f"KCSE Certificates - Fake: {val_fake_kcse:4d} images")
-print(f"Passports - Fake:        {val_fake_passport:4d} images")
+print(f"National IDs:        {val_fake_nat_id:4d} images")
+print(f"KCSE Certificates:   {val_fake_kcse:4d} images")
+print(f"Passports:           {val_fake_passport:4d} images")
+print(f"{'':20} Total: {val_fake_nat_id + val_fake_kcse + val_fake_passport:4d} images")
 
-# Update grand total calculation
-total_train = train_nat_id + train_kcse + train_passport + train_fake_nat_id + train_fake_kcse + train_fake_passport
-total_val = val_nat_id + val_kcse + val_passport + val_fake_nat_id + val_fake_kcse + val_fake_passport
-grand_total = total_train + total_val
+# Grand totals
+print("\n" + "=" * 70)
+genuine_total = (train_nat_id + train_kcse + train_passport + 
+                 val_nat_id + val_kcse + val_passport)
+fake_total = (train_fake_nat_id + train_fake_kcse + train_fake_passport +
+              val_fake_nat_id + val_fake_kcse + val_fake_passport)
+grand_total = genuine_total + fake_total
+
+print(f"GENUINE IMAGES:  {genuine_total:4d}")
+print(f"FAKE IMAGES:     {fake_total:4d}")
+print(f"GRAND TOTAL:     {grand_total:4d} images ready for model training")
+print("=" * 70)
+
+# Dataset split percentages
+train_total = (train_nat_id + train_kcse + train_passport + 
+               train_fake_nat_id + train_fake_kcse + train_fake_passport)
+val_total = (val_nat_id + val_kcse + val_passport +
+             val_fake_nat_id + val_fake_kcse + val_fake_passport)
+
+train_pct = (train_total / grand_total * 100) if grand_total > 0 else 0
+val_pct = (val_total / grand_total * 100) if grand_total > 0 else 0
+
+print(f"\nDataset Split:")
+print(f"  Training:   {train_pct:.1f}% ({train_total} images)")
+print(f"  Validation: {val_pct:.1f}% ({val_total} images)")
+
+print("\n✅ Dataset ready for Week 3 model training!\n")
