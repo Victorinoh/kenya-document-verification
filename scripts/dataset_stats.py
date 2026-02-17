@@ -97,3 +97,29 @@ print(f"  Training:   {train_pct:.1f}%")
 print(f"  Validation: {val_pct:.1f}%")
 
 print("\n✅ Dataset ready for Week 3 model training!\n")
+
+# Add counting for fake images
+print("\n📁 TRAINING SET - FAKE DOCUMENTS")
+print("-" * 70)
+train_fake_nat_id = count_images("data/augmented/train/fake/national_ids")
+train_fake_kcse = count_images("data/augmented/train/fake/kcse_certificates")
+train_fake_passport = count_images("data/augmented/train/fake/passports")
+
+print(f"National IDs - Fake:     {train_fake_nat_id:4d} images")
+print(f"KCSE Certificates - Fake: {train_fake_kcse:4d} images")
+print(f"Passports - Fake:        {train_fake_passport:4d} images")
+
+print("\n📁 VALIDATION SET - FAKE DOCUMENTS")
+print("-" * 70)
+val_fake_nat_id = count_images("data/augmented/validation/fake/national_ids")
+val_fake_kcse = count_images("data/augmented/validation/fake/kcse_certificates")
+val_fake_passport = count_images("data/augmented/validation/fake/passports")
+
+print(f"National IDs - Fake:     {val_fake_nat_id:4d} images")
+print(f"KCSE Certificates - Fake: {val_fake_kcse:4d} images")
+print(f"Passports - Fake:        {val_fake_passport:4d} images")
+
+# Update grand total calculation
+total_train = train_nat_id + train_kcse + train_passport + train_fake_nat_id + train_fake_kcse + train_fake_passport
+total_val = val_nat_id + val_kcse + val_passport + val_fake_nat_id + val_fake_kcse + val_fake_passport
+grand_total = total_train + total_val
