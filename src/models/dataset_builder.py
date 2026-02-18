@@ -6,7 +6,15 @@ import tensorflow as tf
 import numpy as np
 from pathlib import Path
 
-
+# ── DATASET REALITY CHECK ─────────────────────────────────────────────────────
+# Actual counts (confirmed by diagnose_folders.py - Feb 2026):
+#
+#   Train   → genuine: 638  fake: 638  total: 1,276
+#   Val     → genuine: 232  fake: 232  total:   464
+#   Balance : 50/50 genuine/fake in all splits ✅
+#
+# Note: Augmentation ran at higher multiplier than initially planned
+# giving us MORE data than expected — this is a good thing!
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
 IMAGE_SIZE = (224, 224)
@@ -70,15 +78,8 @@ def build_classifier_dataset(split="train", batch_size=16, augment=True):
                 labels.append(label)
 
         # Fake images — same doc_type label (classifier identifies TYPE not authenticity)
-        if split == "train":
-            fake_dir = Path(f"data/augmented/train/fake/{doc_type}")
-        else:
-            fake_dir = Path(f"data/augmented/validation/fake/{doc_type}")
-
-        for ext in ["*.jpg", "*.JPG", "*.png"]:
-            for img_path in fake_dir.glob(ext):
-                paths.append(str(img_path))
-                labels.append(label)
+        # Classifier uses genuine images only
+        # The authenticity detector handles genuine vs fake
 
     print(f"  Classifier {split}: {len(paths)} images")
 
@@ -120,8 +121,9 @@ def build_detector_dataset(split="train", batch_size=16, augment=True):
 
         for ext in ["*.jpg", "*.JPG", "*.png"]:
             for img_path in genuine_dir.glob(ext):
-                paths.append(str(img_path))
-                labels.append(0)   # Genuine
+                if img_path.parent == genuine_dir:   # ← ADD THIS LINE
+                    paths.append(str(img_path))
+                    labels.append(0)   # Genuine
 
         # Fake images → label 1
         if split == "train":
