@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kenya Document Verification</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: 2rem;
+      color: #1a365d;
+      margin-bottom: 6px;
+    }
+    header p {
+      color: #4a5568;
+      font-size: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 36px;
+      width: 100%;
+      max-width: 580px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      color: #2d3748;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* Upload area */
+    .upload-area {
+      border: 2px dashed #cbd5e0;
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: #4299e1;
+      background: #ebf8ff;
+    }
+    .upload-area .icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .upload-area p { color: #718096; font-size: 0.9rem; }
+    .upload-area strong { color: #4299e1; }
+
+    #file-input { display: none; }
+
+    /* Preview */
+    #preview-wrap {
+      display: none;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #preview-wrap img {
+      max-height: 200px;
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    #preview-wrap p {
+      font-size: 0.8rem;
+      color: #718096;
+      margin-top: 6px;
+    }
+
+    /* Select */
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #2d3748;
+      background: white;
+      margin-bottom: 20px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    /* Button */
+    button#verify-btn {
+      width: 100%;
+      padding: 14px;
+      background: #2b6cb0;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button#verify-btn:hover  { background: #2c5282; }
+    button#verify-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #4a5568;
+    }
+    .spinner::before {
+      content: '';
+      display: inline-block;
+      width: 28px; height: 28px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #4299e1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result card */
+    #result-card { display: none; }
+
+    .verdict-banner {
+      border-radius: 12px;
+      padding: 20px 24px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .verdict-banner.genuine  { background: #f0fff4; border: 2px solid #48bb78; }
+    .verdict-banner.uncertain { background: #fffff0; border: 2px solid #ecc94b; }
+    .verdict-banner.fake     { background: #fff5f5; border: 2px solid #fc8181; }
+
+    .verdict-banner .verdict-icon { font-size: 2.5rem; }
+    .verdict-banner .verdict-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 6px 0;
+    }
+    .verdict-banner.genuine  .verdict-text { color: #276749; }
+    .verdict-banner.uncertain .verdict-text { color: #744210; }
+    .verdict-banner.fake     .verdict-text { color: #9b2335; }
+    .verdict-banner .verdict-score { font-size: 0.9rem; color: #4a5568; }
+
+    /* Score bars */
+    .score-item { margin-bottom: 16px; }
+    .score-item label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #4a5568;
+      margin-bottom: 5px;
+    }
+    .score-bar-bg {
+      background: #e2e8f0;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    .bar-blue   { background: #4299e1; }
+    .bar-green  { background: #48bb78; }
+    .bar-orange { background: #ed8936; }
+
+    /* Checks list */
+    .checks { list-style: none; }
+    .checks li {
+      padding: 7px 0;
+      font-size: 0.88rem;
+      color: #2d3748;
+      border-bottom: 1px solid #f7fafc;
+      display: flex;
+      gap: 8px;
+    }
+    .checks li:last-child { border-bottom: none; }
+
+    /* Details grid */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .detail-box {
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .detail-box .label { font-size: 0.75rem; color: #718096; margin-bottom: 3px; }
+    .detail-box .value { font-size: 0.95rem; font-weight: 600; color: #2d3748; }
+
+    .error-msg {
+      background: #fff5f5;
+      border: 1px solid #fc8181;
+      border-radius: 8px;
+      padding: 14px;
+      color: #9b2335;
+      font-size: 0.9rem;
+      display: none;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Document Verification System</h1>
+  <p>AI-powered verification for Kenyan government documents</p>
+</header>
+
+<!-- Upload Card -->
+<div class="card">
+  <h2>📤 Upload Document</h2>
+
+  <div class="upload-area" id="upload-area">
+    <div class="icon">🖼️</div>
+    <p><strong>Click to upload</strong> or drag and drop</p>
+    <p>National ID · KCSE Certificate · Passport</p>
+    <p style="margin-top:6px; font-size:0.8rem;">JPG or PNG</p>
+  </div>
+  <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.JPG,.JPEG,.PNG" />
+
+  <div id="preview-wrap">
+    <img id="preview-img" src="" alt="Preview" />
+    <p id="preview-name"></p>
+  </div>
+
+  <select id="doc-type">
+    <option value="">🔍 Auto-detect document type</option>
+    <option value="national_id">🪪 National ID</option>
+    <option value="kcse_certificate">📜 KCSE Certificate</option>
+    <option value="passport">📕 Passport</option>
+  </select>
+
+  <button id="verify-btn" disabled>Verify Document</button>
+
+  <div class="spinner" id="spinner">Verifying document — please wait...</div>
+  <div class="error-msg" id="error-msg"></div>
+</div>
+
+<!-- Result Card -->
+<div class="card" id="result-card">
+  <h2>📋 Verification Result</h2>
+
+  <div class="verdict-banner" id="verdict-banner">
+    <div class="verdict-icon" id="verdict-icon"></div>
+    <div class="verdict-text" id="verdict-text"></div>
+    <div class="verdict-score" id="verdict-score"></div>
+  </div>
+
+  <div style="margin-bottom:24px">
+    <div class="score-item">
+      <label><span>🔍 CNN Classifier</span><span id="cls-score">-</span></label>
+      <div class="score-bar-bg">
+        <div class="score-bar-fill bar-blue" id="cls-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="score-item">
+      <label><span>🧠 Authenticity Detector</span><span id="det-score">-</span></label>
+      <div class="score-bar-bg">
+        <div class="score-bar-fill bar-green" id="det-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="score-item">
+      <label><span>📝 OCR Validator</span><span id="ocr-score">-</span></label>
+      <div class="score-bar-bg">
+        <div class="score-bar-fill bar-orange" id="ocr-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="details-grid" style="margin-bottom:24px">
+    <div class="detail-box">
+      <div class="label">Document Type</div>
+      <div class="value" id="det-doc-type">-</div>
+    </div>
+    <div class="detail-box">
+      <div class="label">OCR Confidence</div>
+      <div class="value" id="det-ocr-conf">-</div>
+    </div>
+    <div class="detail-box">
+      <div class="label">Fields Found</div>
+      <div class="value" id="det-fields">-</div>
+    </div>
+    <div class="detail-box">
+      <div class="label">Processing Time</div>
+      <div class="value" id="det-time">-</div>
+    </div>
+  </div>
+
+  <div>
+    <h3 style="font-size:0.9rem; color:#4a5568; margin-bottom:10px;">
+      ✅ Validation Checks Passed: <span id="checks-summary"></span>
+    </h3>
+    <ul class="checks" id="checks-list"></ul>
+  </div>
+</div>
+
+<script>
+  const uploadArea  = document.getElementById('upload-area');
+  const fileInput   = document.getElementById('file-input');
+  const previewWrap = document.getElementById('preview-wrap');
+  const previewImg  = document.getElementById('preview-img');
+  const previewName = document.getElementById('preview-name');
+  const verifyBtn   = document.getElementById('verify-btn');
+  const spinner     = document.getElementById('spinner');
+  const errorMsg    = document.getElementById('error-msg');
+  const resultCard  = document.getElementById('result-card');
+
+  let selectedFile = null;
+
+  // Click to upload
+  uploadArea.addEventListener('click', () => fileInput.click());
+
+  // Drag and drop
+  uploadArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImg.src     = e.target.result;
+      previewName.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+      previewWrap.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    verifyBtn.disabled = false;
+    resultCard.style.display  = 'none';
+    errorMsg.style.display    = 'none';
+  }
+
+  // Verify button
+  verifyBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    verifyBtn.disabled       = true;
+    spinner.style.display    = 'block';
+    errorMsg.style.display   = 'none';
+    resultCard.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    const docType = document.getElementById('doc-type').value;
+    if (docType) formData.append('doc_type', docType);
+
+    try {
+      const resp = await fetch('/verify', { method: 'POST', body: formData });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(data.detail || 'Verification failed');
+      }
+
+      showResult(data);
+
+    } catch (err) {
+      errorMsg.textContent   = '❌ Error: ' + err.message;
+      errorMsg.style.display = 'block';
+    } finally {
+      spinner.style.display = 'none';
+      verifyBtn.disabled    = false;
+    }
+  });
+
+  function showResult(data) {
+    // Verdict banner
+    const banner = document.getElementById('verdict-banner');
+    banner.className = 'verdict-banner ' + data.verdict.toLowerCase();
+    document.getElementById('verdict-icon').textContent  = data.verdict_icon;
+    document.getElementById('verdict-text').textContent  = data.verdict;
+    document.getElementById('verdict-score').textContent =
+      `Score: ${data.final_score}% · Confidence: ${data.confidence}`;
+
+    // Score bars
+    const cls = data.layers.classifier;
+    const det = data.layers.detector;
+    const ocr = data.layers.ocr;
+
+    setBar('cls', cls.score);
+    setBar('det', det.score);
+    setBar('ocr', ocr.score);
+
+    // Details
+    document.getElementById('det-doc-type').textContent = data.display_name;
+    document.getElementById('det-ocr-conf').textContent =
+      data.ocr_summary.text_confidence + '%';
+    document.getElementById('det-fields').textContent =
+      data.ocr_summary.fields_found + ' / ' + data.ocr_summary.fields_total;
+    document.getElementById('det-time').textContent =
+      (data.duration_ms / 1000).toFixed(1) + 's';
+
+    // Checks
+    const val = data.validation;
+    document.getElementById('checks-summary').textContent =
+      val.checks_passed + ' / ' + val.checks_total;
+
+    const failedSet = new Set(val.failed_checks);
+    const allChecks = [
+      'Kenya identifier present', 'ID number extracted',
+      'ID number format valid (7-9 digits)', 'Date of birth found',
+      'Date of birth is valid past date', 'Sex field found',
+      'Sex value is valid (MALE/FEMALE)', 'OCR confidence acceptable (>30%)',
+      'KCSE identifier present', 'Index number extracted',
+      'Index number length valid (10-12 digits)', 'Examination year found',
+      'Year is valid KCSE year (1989-present)', 'Mean grade found',
+      'Mean grade is valid Kenyan grade', 'Minimum 7 subject grades found',
+      'Passport identifier present', 'Passport number extracted',
+      'Passport number format valid (A1234567)',
+      'MRZ (Machine Readable Zone) detected', 'Nationality is Kenyan',
+      'Dates found (DOB and/or expiry)', 'Expiry date is in the future'
+    ];
+
+    const list = document.getElementById('checks-list');
+    list.innerHTML = '';
+    val.failed_checks.forEach(check => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>❌</span><span>${check}</span>`;
+      list.appendChild(li);
+    });
+
+    // Show passed count
+    const passedCount = val.checks_passed;
+    for (let i = 0; i < passedCount; i++) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>✅</span><span style="color:#276749">Check passed</span>`;
+    }
+
+    resultCard.style.display = 'block';
+    resultCard.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function setBar(id, score) {
+    const s = score || 0;
+    document.getElementById(id + '-score').textContent = s.toFixed(1) + '%';
+    setTimeout(() => {
+      document.getElementById(id + '-bar').style.width = Math.min(s, 100) + '%';
+    }, 100);
+  }
+</script>
+</body>
+</html>
