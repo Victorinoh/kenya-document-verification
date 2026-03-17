@@ -205,3 +205,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Android
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+*.apk
+*.aab
+*.keystore
+# NIST — never commit raw document images
+data/raw/
+data/augmented/
+data/processed/
+*.h5
+*.keras
