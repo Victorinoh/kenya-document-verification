@@ -7,14 +7,16 @@ import numpy as np
 from pathlib import Path
 
 # ── DATASET REALITY CHECK ─────────────────────────────────────────────────────
-# Actual counts (confirmed by diagnose_folders.py - Feb 2026):
+# Updated counts after retraining data preparation (March 2026):
 #
-#   Train   → genuine: 638  fake: 638  total: 1,276
-#   Val     → genuine: 232  fake: 232  total:   464
+#   national_ids      : 225 genuine + 225 fake
+#   passports         : 279 genuine + 279 fake
+#   kcse_certificates :  90 genuine +  90 fake
+#   Total             : 594 genuine + 594 fake = 1,188 images
+#   After 80/20 split:
+#   Train   → ~475 genuine + ~475 fake = ~950
+#   Val     → ~119 genuine + ~119 fake = ~238
 #   Balance : 50/50 genuine/fake in all splits ✅
-#
-# Note: Augmentation ran at higher multiplier than initially planned
-# giving us MORE data than expected — this is a good thing!
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
 IMAGE_SIZE = (224, 224)
@@ -27,7 +29,7 @@ DOC_TYPE_MAP = {
 }
 
 
-# ── IMAGE LOADING ──────────────────────────────────────────────────────────────
+# ── IMAGE LOADING ─────────────────────────────────────────────────────────────
 
 def load_and_preprocess(path, label):
     """Load a single image and normalise to [0, 1]"""
@@ -66,26 +68,30 @@ def build_classifier_dataset(split="train", batch_size=16, augment=True):
 
     for doc_type, label in DOC_TYPE_MAP.items():
 
-        # Genuine images
+        # Genuine images only — classifier identifies document TYPE not authenticity
         if split == "train":
-            genuine_dir = Path(f"data/augmented/train/{doc_type}")
+            genuine_dir = Path(f"data/processed/train/{doc_type}")
         else:
-            genuine_dir = Path(f"data/augmented/validation/{doc_type}")
+            genuine_dir = Path(f"data/processed/validation/{doc_type}")
+
+        if not genuine_dir.exists():
+            print(f"  ⚠️  Classifier: folder not found — {genuine_dir}")
+            continue
 
         for ext in ["*.jpg", "*.JPG", "*.png"]:
             for img_path in genuine_dir.glob(ext):
                 paths.append(str(img_path))
                 labels.append(label)
 
-        # Fake images — same doc_type label (classifier identifies TYPE not authenticity)
-        # Classifier uses genuine images only
-        # The authenticity detector handles genuine vs fake
-
     print(f"  Classifier {split}: {len(paths)} images")
 
-    dataset = tf.data.Dataset.from_tensor_slices(
-        (paths, labels)
-    )
+    if len(paths) == 0:
+        raise ValueError(
+            f"No images found for classifier {split} split. "
+            f"Run prepare_dataset.py first."
+        )
+
+    dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
     dataset = dataset.shuffle(len(paths), seed=42)
     dataset = dataset.map(load_and_preprocess, num_parallel_calls=AUTOTUNE)
 
@@ -115,33 +121,48 @@ def build_detector_dataset(split="train", batch_size=16, augment=True):
 
         # Genuine images → label 0
         if split == "train":
-            genuine_dir = Path(f"data/augmented/train/{doc_type}")
+            genuine_dir = Path(f"data/processed/train/{doc_type}")
         else:
-            genuine_dir = Path(f"data/augmented/validation/{doc_type}")
+            genuine_dir = Path(f"data/processed/validation/{doc_type}")
 
-        for ext in ["*.jpg", "*.JPG", "*.png"]:
-            for img_path in genuine_dir.glob(ext):
-                if img_path.parent == genuine_dir:   # ← ADD THIS LINE
+        if not genuine_dir.exists():
+            print(f"  ⚠️  Detector genuine: folder not found — {genuine_dir}")
+        else:
+            for ext in ["*.jpg", "*.JPG", "*.png"]:
+                for img_path in genuine_dir.glob(ext):
                     paths.append(str(img_path))
                     labels.append(0)   # Genuine
 
         # Fake images → label 1
         if split == "train":
-            fake_dir = Path(f"data/augmented/train/fake/{doc_type}")
+            fake_dir = Path(f"data/processed/train/fake/{doc_type}")
         else:
-            fake_dir = Path(f"data/augmented/validation/fake/{doc_type}")
+            fake_dir = Path(f"data/processed/validation/fake/{doc_type}")
 
-        for ext in ["*.jpg", "*.JPG", "*.png"]:
-            for img_path in fake_dir.glob(ext):
-                paths.append(str(img_path))
-                labels.append(1)   # Fake
+        if not fake_dir.exists():
+            print(f"  ⚠️  Detector fake: folder not found — {fake_dir}")
+        else:
+            for ext in ["*.jpg", "*.JPG", "*.png"]:
+                for img_path in fake_dir.glob(ext):
+                    paths.append(str(img_path))
+                    labels.append(1)   # Fake
 
+    genuine_count = labels.count(0)
+    fake_count    = labels.count(1)
     print(f"  Detector  {split}: {len(paths)} images "
-          f"(genuine: {labels.count(0)}, fake: {labels.count(1)})")
+          f"(genuine: {genuine_count}, fake: {fake_count})")
 
-    dataset = tf.data.Dataset.from_tensor_slices(
-        (paths, labels)
-    )
+    if len(paths) == 0:
+        raise ValueError(
+            f"No images found for detector {split} split. "
+            f"Run prepare_dataset.py first."
+        )
+
+    if genuine_count != fake_count:
+        print(f"  ⚠️  Class imbalance detected — "
+              f"genuine: {genuine_count}, fake: {fake_count}")
+
+    dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
     dataset = dataset.shuffle(len(paths), seed=42)
     dataset = dataset.map(load_and_preprocess, num_parallel_calls=AUTOTUNE)
 
@@ -152,7 +173,7 @@ def build_detector_dataset(split="train", batch_size=16, augment=True):
     return dataset, len(paths)
 
 
-# ── QUICK TEST ─────────────────────────────────────────────────────────────────
+# ── QUICK TEST ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("=" * 60)
